@@ -1,0 +1,597 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pro Volleyball Sim - Final</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: #222;
+            color: #ecf0f1;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            display: flex;
+            flex-direction: row;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        .panel {
+            width: 240px;
+            height: 600px;
+            background: #333;
+            border: 2px solid #555;
+            border-radius: 8px;
+            padding: 15px;
+            display: flex;
+            flex-direction: column;
+            text-align: center;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+            box-sizing: border-box;
+        }
+
+        h2 { color: #f1c40f; border-bottom: 1px solid #7f8c8d; padding-bottom: 5px; font-size: 1.2rem; margin-top: 0; }
+        
+        .control-phase {
+            background: rgba(0,0,0,0.2);
+            padding: 8px;
+            border-radius: 5px;
+            margin-bottom: 8px;
+            font-size: 0.9rem;
+        }
+
+        .key { background: #fff; color: #333; padding: 1px 5px; border-radius: 4px; font-weight: bold; font-size: 0.85em; }
+
+        #game-wrapper {
+            margin: 0 10px;
+            position: relative;
+        }
+
+        canvas {
+            background: #e6b87d;
+            border: 4px solid #fff;
+            box-shadow: 0 0 20px rgba(0,0,0,0.6);
+            display: block;
+            cursor: crosshair;
+        }
+
+        #status-msg {
+            position: absolute;
+            top: 15px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0,0,0,0.85);
+            padding: 8px 20px;
+            border-radius: 20px;
+            font-weight: bold;
+            color: #f1c40f;
+            pointer-events: none;
+            font-size: 1.1rem;
+            white-space: nowrap;
+            border: 1px solid #fff;
+            z-index: 10;
+        }
+
+        #score-box {
+            font-size: 2.5rem;
+            font-weight: bold;
+            font-family: monospace;
+            margin-top: auto;
+            margin-bottom: 10px;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="panel">
+        <h2>CONTROLS</h2>
+        
+        <div class="control-phase">
+            <strong style="color:#3498db">1. MANUAL MOVE</strong><br>
+            <span class="key">WASD</span> to the <strong>X</strong>.
+        </div>
+
+        <div class="control-phase">
+            <strong style="color:#fff">2. JUMP</strong><br>
+            Press <span class="key">SPACE</span><br>
+            (When ring closes)
+        </div>
+
+        <div class="control-phase">
+            <strong style="color:#2ecc71">3. ATTACK</strong><br>
+            Hold <span class="key">A</span> or <span class="key">D</span><br>
+            (When "HIT!" appears)
+        </div>
+
+        <div class="control-phase" style="margin-top: 20px; border: 1px solid #777;">
+            <strong style="color:#f1c40f">REPLAY</strong><br>
+            Press <span class="key">ENTER</span><br>
+            (After Game Over)
+        </div>
+    </div>
+
+    <div id="game-wrapper">
+        <canvas id="gameCanvas" width="400" height="600"></canvas>
+        <div id="status-msg">PRESS SPACE TO START</div>
+    </div>
+
+    <div class="panel">
+        <h2>STATS</h2>
+        <div style="text-align: left; margin-bottom: 20px;">
+            <p>Phase: <span id="phase-display" style="color:#2ecc71">READY</span></p>
+            <p>Blockers: <span id="block-display" style="font-size:1.4rem; color:#e74c3c; font-weight:bold;">-</span></p>
+        </div>
+        
+        <div id="score-box">
+            <span style="color:#3498db" id="p-score">0</span> - <span style="color:#e74c3c" id="e-score">0</span>
+        </div>
+        <p style="font-size: 0.8rem;">First to 7 wins</p>
+    </div>
+
+    <script>
+        const canvas = document.getElementById("gameCanvas");
+        const ctx = canvas.getContext("2d");
+        const statusEl = document.getElementById("status-msg");
+        const phaseEl = document.getElementById("phase-display");
+        const blockEl = document.getElementById("block-display");
+
+        // --- CONSTANTS ---
+        const W = canvas.width;  
+        const H = canvas.height; 
+        const NET_Y = 240;       
+        const PLAYER_SPEED = 4.0; 
+        
+        const PHASES = { READY: -1, SERVE: 0, RECEIVE: 1, SET: 2, SPIKE: 3, RECOVER: 4, GAMEOVER: 5 };
+        let currentPhase = PHASES.READY;
+        let playerScore = 0;
+        let enemyScore = 0;
+        
+        const keys = { w:false, a:false, s:false, d:false, space: false };
+        
+        // --- ENTITIES ---
+        let team = [
+            {x: 280, y: 260, role: 'S', color: '#3498db', startX: 280, startY: 260}, 
+            {x: 200, y: 300, role: 'MB', color: '#3498db', startX: 200, startY: 300},
+            {x: 320, y: 450, role: 'OPP', color: '#3498db', startX: 320, startY: 450},
+            {x: 80,  y: 450, role: 'OH', color: '#f1c40f'}, // YOU (Player)
+            {x: 200, y: 520, role: 'L', color: '#e67e22', startX: 200, startY: 520},
+            {x: 180, y: 360, role: 'OH2', color: '#3498db', startX: 180, startY: 360}  
+        ];
+        
+        let enemies = [
+            {x: 80,  y: 220, role: 'OPP', color: '#e74c3c', startX: 80,  startY: 220}, 
+            {x: 200, y: 220, role: 'MB', color: '#e74c3c', startX: 200, startY: 220}, 
+            {x: 320, y: 220, role: 'OH', color: '#e74c3c', startX: 320, startY: 220}, 
+            {x: 80,  y: 80,  role: 'OH', color: '#e74c3c', startX: 80,  startY: 80},  
+            {x: 200, y: 40,  role: 'L',  color: '#e74c3c', startX: 200, startY: 40},   
+            {x: 350, y: 20,  role: 'S',  color: '#e74c3c', startX: 350, startY: 20}    
+        ];
+
+        let ball = { 
+            x: 0, y: 0, z: 0, 
+            tx: 0, ty: 0, 
+            sx: 0, sy: 0, 
+            t: 0, speed: 0.01, arcHeight: 0,
+            result: null
+        };
+
+        // Player Mechanics
+        let p = team[3];
+        let jumpHeight = 0;
+        let isJumping = false;
+        let jumpVel = 0;
+        let activeBlockerCount = 0;
+        let setterTargetX = 0;
+        let setterTargetY = 0;
+        let currentPassQuality = 0; 
+        let interceptor = null;
+
+        // --- INPUT HANDLERS ---
+        window.addEventListener('keydown', e => {
+            const k = e.key.toLowerCase();
+            const code = e.code;
+            
+            // REPLAY LOGIC
+            if(code === 'Enter' && currentPhase === PHASES.GAMEOVER) {
+                resetGame();
+                return;
+            }
+
+            // SPACE: JUMP / START
+            if(code === 'Space') {
+                if(currentPhase === PHASES.READY) { 
+                    startRound(); 
+                } else if(!isJumping && currentPhase !== PHASES.GAMEOVER) { 
+                    isJumping = true; 
+                    jumpVel = 6.0; 
+                } 
+                return;
+            }
+
+            // MOVEMENT
+            if(!isJumping && currentPhase !== PHASES.GAMEOVER) {
+                if(k === 'w') keys.w = true;
+                if(k === 's') keys.s = true;
+                if(k === 'a') keys.a = true;
+                if(k === 'd') keys.d = true;
+            } 
+            
+            // ATTACK (Must be in air)
+            if((k === 'a' || k === 'd') && isJumping && currentPhase === PHASES.SET) {
+                let type = (k === 'a') ? 'line' : 'cross';
+                attemptHit(type);
+            }
+        });
+
+        window.addEventListener('keyup', e => {
+            const k = e.key.toLowerCase();
+            if(k === 'w') keys.w = false;
+            if(k === 's') keys.s = false;
+            if(k === 'a') keys.a = false;
+            if(k === 'd') keys.d = false;
+        });
+
+        // --- GAME LOGIC ---
+
+        function resetGame() {
+            playerScore = 0;
+            enemyScore = 0;
+            updateScore();
+            currentPhase = PHASES.READY;
+            statusEl.innerText = "PRESS SPACE TO START";
+            p.x = 80; p.y = 450;
+            team.forEach(t => { if(t!==p) { t.x = t.startX; t.y = t.startY; } });
+            enemies.forEach(e => { e.x = e.startX; e.y = e.startY; });
+        }
+
+        function startRound() {
+            p.x = 80; p.y = 450; 
+            isJumping = false; jumpHeight = 0; jumpVel = 0;
+            interceptor = null;
+            
+            team.forEach(t => { if(t!==p) { t.x = t.startX; t.y = t.startY; } });
+            enemies.forEach(e => { e.x = e.startX; e.y = e.startY; });
+
+            currentPhase = PHASES.SERVE;
+            statusEl.innerText = "MOVE TO THE X!";
+            phaseEl.innerText = "SERVE";
+            blockEl.innerText = "-";
+
+            let serveTargetX = 20 + Math.random() * 120;
+            let serveTargetY = 450 + Math.random() * 100;
+
+            ball.x = 350; ball.y = 20; ball.z = 120;
+            ball.sx = 350; ball.sy = 20;
+            ball.tx = serveTargetX; ball.ty = serveTargetY; 
+            ball.t = 0; ball.speed = 0.009; ball.arcHeight = 120;
+        }
+
+        function update() {
+            if(currentPhase === PHASES.GAMEOVER) return;
+
+            // Manual Movement (WASD)
+            if(!isJumping && currentPhase !== PHASES.READY && currentPhase !== PHASES.SPIKE && currentPhase !== PHASES.RECOVER) { 
+                if(keys.w && p.y > NET_Y + 10) p.y -= PLAYER_SPEED;
+                if(keys.s && p.y < H - 10) p.y += PLAYER_SPEED;
+                if(keys.a && p.x > 10) p.x -= PLAYER_SPEED;
+                if(keys.d && p.x < W - 10) p.x += PLAYER_SPEED;
+            } 
+            
+            // Jump Physics
+            if (isJumping) {
+                jumpHeight += jumpVel;
+                jumpVel -= 0.30; 
+                if(jumpHeight <= 0) { 
+                    jumpHeight = 0; 
+                    isJumping = false; 
+                }
+            }
+
+            // Ball Physics
+            if(currentPhase !== PHASES.RECOVER && currentPhase !== PHASES.READY) {
+                ball.t += ball.speed;
+                if (ball.t <= 1.0) {
+                    ball.x = ball.sx + (ball.tx - ball.sx) * ball.t;
+                    ball.y = ball.sy + (ball.ty - ball.sy) * ball.t;
+                    ball.z = ball.arcHeight * Math.sin(ball.t * Math.PI);
+                } else {
+                    ball.z = 0;
+                }
+            }
+
+            // --- PHASE TRANSITIONS ---
+
+            // 1. SERVE -> RECEIVE
+            if(currentPhase === PHASES.SERVE && ball.t >= 1) {
+                let dx = p.x - ball.tx;
+                let dy = p.y - ball.ty;
+                let dist = Math.sqrt(dx*dx + dy*dy);
+
+                if (dist > 50) {
+                    statusEl.innerText = "ACED! MOVE FASTER.";
+                    enemyScore++; updateScore(); checkGameOver();
+                    return;
+                }
+
+                currentPassQuality = Math.max(0, 1.0 - (dist / 50));
+                
+                currentPhase = PHASES.RECEIVE;
+                statusEl.innerText = "RUN TO ATTACK LINE!";
+                phaseEl.innerText = "PASS";
+                
+                let setterOffset = (currentPassQuality > 0.7) ? 0 : 60;
+                activeBlockerCount = (currentPassQuality > 0.7) ? 1 : 2;
+                blockEl.innerText = activeBlockerCount;
+
+                setterTargetX = 280;
+                setterTargetY = 260 + setterOffset; 
+
+                ball.sx = ball.x; ball.sy = ball.y;
+                ball.tx = setterTargetX; ball.ty = setterTargetY; 
+                ball.t = 0; 
+                ball.arcHeight = 140; 
+                ball.speed = 0.018; 
+            }
+
+            if(currentPhase === PHASES.RECEIVE) {
+                moveEntity(enemies[5], 300, 80, 0.03); 
+                moveEntity(team[0], setterTargetX, setterTargetY, 0.06); 
+            }
+
+            // 2. RECEIVE -> SET
+            if(currentPhase === PHASES.RECEIVE && ball.t >= 1) {
+                currentPhase = PHASES.SET;
+                statusEl.innerText = "WAIT FOR GREEN... HIT!";
+                phaseEl.innerText = "SET";
+                
+                let baseSetX = 40;
+                let baseSetY = 260;
+                let deviation = (1.0 - currentPassQuality) * 50;
+                ball.tx = baseSetX + (Math.random() * deviation); 
+                ball.ty = baseSetY + (Math.random() * deviation); 
+
+                ball.sx = ball.x; ball.sy = ball.y;
+                ball.t = 0; 
+                ball.speed = 0.010; 
+                ball.arcHeight = 140;
+            }
+
+            if(currentPhase === PHASES.SET) {
+                let blockX = ball.tx; 
+                let blockY = 220;
+                moveEntity(enemies[0], blockX, blockY, 0.04); 
+                if(activeBlockerCount >= 2) moveEntity(enemies[1], blockX + 25, blockY, 0.04); 
+                if(activeBlockerCount >= 3) moveEntity(enemies[2], blockX + 50, blockY, 0.04); 
+            }
+
+            // 3. SET -> MISSED
+            if(currentPhase === PHASES.SET && ball.t >= 1.2) {
+                statusEl.innerText = "TOO LATE!";
+                enemyScore++; updateScore(); checkGameOver();
+            }
+
+            // 4. SPIKE ANIMATION
+            if(currentPhase === PHASES.SPIKE) {
+                if(ball.result === 'DIG' && interceptor) {
+                    moveEntity(interceptor, ball.tx, ball.ty, 0.08); 
+                }
+                if(ball.t >= 1) {
+                    resolvePoint();
+                }
+            }
+        }
+
+        function attemptHit(type) {
+            let ballAboveFloor = ball.z > 15; 
+            let inGreenWindow = ball.t > 0.80 && ball.t < 1.05;
+            let dist = Math.sqrt((p.x - ball.x)**2 + (p.y - ball.y)**2);
+            let inRange = dist < 80;
+
+            if(ballAboveFloor && inGreenWindow && inRange) {
+                executeSpike(type);
+            } else {
+                if(!inRange) statusEl.innerText = "TOO FAR AWAY!";
+                else if (ball.t < 0.80) statusEl.innerText = "TOO EARLY!";
+                else statusEl.innerText = "WHIFF!";
+            }
+        }
+
+        function executeSpike(type) {
+            currentPhase = PHASES.SPIKE;
+            phaseEl.innerText = "ATTACK";
+            statusEl.innerText = "BOOM!";
+
+            let isKill = true;
+            let targetX = 0, targetY = 0;
+
+            if(type === 'line') { targetX = 30; targetY = 40; } 
+            else { targetX = 350; targetY = 40; } 
+
+            if (activeBlockerCount >= 3) {
+                if(Math.random() > 0.3) { isKill = false; ball.result = 'BLOCK'; }
+            } else if (activeBlockerCount == 2) {
+                if(Math.random() > 0.6) { isKill = false; ball.result = 'DIG'; }
+            }
+
+            if(isKill) ball.result = 'KILL';
+            else if(ball.result !== 'BLOCK') ball.result = 'DIG';
+
+            ball.sx = ball.x; ball.sy = ball.y;
+            
+            if(ball.result === 'BLOCK') {
+                ball.tx = ball.x + (Math.random()*40 - 20);
+                ball.ty = ball.y + 40; 
+                statusEl.innerText = "BLOCKED!";
+            } else {
+                ball.tx = targetX; ball.ty = targetY;
+                if(ball.result === 'DIG') {
+                    statusEl.innerText = "DIG!";
+                    interceptor = getClosestDefender(targetX, targetY);
+                } else {
+                    statusEl.innerText = "KILL!";
+                }
+            }
+
+            ball.t = 0;
+            ball.speed = 0.050; 
+            ball.arcHeight = 10; 
+        }
+
+        function moveEntity(e, tx, ty, speed) {
+            e.x += (tx - e.x) * speed;
+            e.y += (ty - e.y) * speed;
+        }
+
+        function getClosestDefender(tx, ty) {
+            let closest = enemies[3];
+            let minD = 9999;
+            [enemies[3], enemies[4], enemies[5]].forEach(e => {
+                let d = Math.sqrt((e.x - tx)**2 + (e.y - ty)**2);
+                if(d < minD) { minD = d; closest = e; }
+            });
+            return closest;
+        }
+
+        function resolvePoint() {
+            if(ball.result === 'KILL') playerScore++;
+            else enemyScore++;
+            updateScore();
+            checkGameOver();
+        }
+
+        function checkGameOver() {
+            if(playerScore >= 7 || enemyScore >= 7) {
+                currentPhase = PHASES.GAMEOVER;
+                statusEl.innerText = "GAME OVER";
+            } else {
+                resetPhase();
+            }
+        }
+
+        function resetPhase() {
+            currentPhase = PHASES.RECOVER;
+            setTimeout(() => {
+                if(currentPhase !== PHASES.GAMEOVER) {
+                    currentPhase = PHASES.READY;
+                    statusEl.innerText = "PRESS SPACE";
+                    blockEl.innerText = "-";
+                }
+            }, 1500);
+        }
+
+        function updateScore() {
+            document.getElementById("p-score").innerText = playerScore;
+            document.getElementById("e-score").innerText = enemyScore;
+        }
+
+        function drawCourt() {
+            ctx.clearRect(0,0,W,H);
+            ctx.fillStyle = "#e6b87d"; ctx.fillRect(0,0,W,H);
+            ctx.strokeStyle = "white"; ctx.lineWidth = 4; ctx.strokeRect(10, 10, W-20, H-20);
+            ctx.beginPath(); ctx.moveTo(0, NET_Y); ctx.lineTo(W, NET_Y); ctx.lineWidth = 4; ctx.stroke();
+            ctx.setLineDash([8,8]);
+            ctx.beginPath(); ctx.moveTo(10, NET_Y + 110); ctx.lineTo(W-10, NET_Y + 110); ctx.stroke();
+            ctx.beginPath(); ctx.moveTo(10, NET_Y - 110); ctx.lineTo(W-10, NET_Y - 110); ctx.stroke();
+            ctx.setLineDash([]);
+
+            if(currentPhase === PHASES.SERVE && ball.t > 0.5) drawXMarker(ball.tx, ball.ty, "white");
+
+            if(currentPhase === PHASES.SET && ball.t > 0.3) {
+                drawXMarker(ball.tx, ball.ty, "white");
+                
+                let progress = (ball.t - 0.3) / (1.0 - 0.3);
+                let ringSize = 70 * (1 - progress);
+                let color = "white";
+                let thick = 2;
+                
+                if (ball.t > 0.85) { 
+                    color = "#2ecc71"; // GREEN
+                    thick = 6;
+                    ctx.fillStyle = "#2ecc71";
+                    ctx.font = "900 24px Arial";
+                    ctx.fillText("HIT!", ball.tx - 25, ball.ty - 50);
+                }
+
+                if (ringSize > 0) {
+                    ctx.strokeStyle = color;
+                    ctx.lineWidth = thick;
+                    ctx.beginPath();
+                    ctx.arc(ball.tx, ball.ty, ringSize, 0, Math.PI*2);
+                    ctx.stroke();
+                }
+            }
+
+            // GAME OVER OVERLAY
+            if(currentPhase === PHASES.GAMEOVER) {
+                ctx.fillStyle = "rgba(0,0,0,0.7)";
+                ctx.fillRect(0,0,W,H);
+                
+                ctx.fillStyle = (playerScore >= 7) ? "#2ecc71" : "#e74c3c";
+                ctx.font = "bold 40px Arial";
+                let txt = (playerScore >= 7) ? "YOU WON!" : "YOU LOST!";
+                ctx.fillText(txt, W/2 - 100, H/2);
+                
+                ctx.fillStyle = "white";
+                ctx.font = "bold 20px Arial";
+                ctx.fillText("Press ENTER to Replay", W/2 - 105, H/2 + 50);
+            }
+        }
+
+        function drawXMarker(x, y, color) {
+            ctx.strokeStyle = color; ctx.lineWidth = 3;
+            ctx.beginPath(); 
+            ctx.moveTo(x - 10, y - 10); ctx.lineTo(x + 10, y + 10);
+            ctx.moveTo(x + 10, y - 10); ctx.lineTo(x - 10, y + 10);
+            ctx.stroke();
+        }
+
+        function drawPlayer(person) {
+            let x = person.x; let y = person.y;
+            if(person === p) {
+                ctx.fillStyle = "rgba(0,0,0,0.3)"; 
+                ctx.beginPath(); ctx.ellipse(x, y, 16, 8, 0, 0, Math.PI*2); ctx.fill();
+                y -= jumpHeight;
+            } else {
+                ctx.fillStyle = "rgba(0,0,0,0.2)"; 
+                ctx.beginPath(); ctx.ellipse(x, y, 12, 6, 0, 0, Math.PI*2); ctx.fill();
+            }
+            
+            ctx.fillStyle = person.color; ctx.beginPath(); ctx.arc(x, y, 16, 0, Math.PI*2); ctx.fill();
+            ctx.fillStyle = "#f5cba7"; ctx.beginPath(); ctx.arc(x, y-4, 8, 0, Math.PI*2); ctx.fill();
+            
+            if(person === p) { 
+                ctx.strokeStyle = "#fff"; ctx.lineWidth = 2; 
+                ctx.beginPath(); ctx.arc(x, y, 18, 0, Math.PI*2); ctx.stroke(); 
+            }
+        }
+
+        function drawBall() {
+            ctx.fillStyle = "rgba(0,0,0,0.5)"; ctx.beginPath();
+            let sSz = Math.max(4, 12 - (ball.z/20)); 
+            ctx.ellipse(ball.x, ball.y, sSz, sSz/2, 0, 0, Math.PI*2); ctx.fill();
+            
+            ctx.fillStyle = "#fff"; ctx.beginPath();
+            let vY = ball.y - ball.z; 
+            let vSz = 10 + (ball.z / 18); 
+            ctx.arc(ball.x, vY, vSz, 0, Math.PI*2); ctx.fill();
+            ctx.strokeStyle = "#ddd"; ctx.lineWidth = 1; ctx.stroke();
+        }
+
+        function loop() {
+            update();
+            drawCourt();
+            enemies.forEach(e => drawPlayer(e));
+            team.forEach(t => drawPlayer(t));
+            drawBall();
+            requestAnimationFrame(loop);
+        }
+
+        statusEl.innerText = "PRESS SPACE TO START";
+        loop();
+
+    </script>
+</body>
+</html>
