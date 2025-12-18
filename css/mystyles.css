@@ -1,19 +1,25 @@
-/* GLOBAL SETTINGS - Affects Index and About (Resume) */
+/* 1. GLOBAL BASE STYLE (Applied to everything) */
 body {
-    background-color: #e0f2f1 !important; /* Your custom teal background */
+    background-color: #e0f2f1; /* Your custom teal background */
+    margin: 0;
+    padding: 0;
+    /* Clean font for Resume and Professional pages */
+    font-family: 'Open Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
     color: #263238; 
-    font-family: 'papyrus', 'Arial Narrow', Arial, sans-serif; /* Your custom font */
-    font-size: 1.2rem;
 }
 
-/* Custom Header Font Class */
+/* 2. THE PAPYRUS CLASS (Use this for specific pages if desired) */
+.papyrus-font {
+    font-family: 'papyrus', 'Arial Narrow', Arial, sans-serif !important;
+}
+
+/* Custom Header Font Class for Bootstrap Headers */
 .CSfont {
     font-family: 'pressura', sans-serif !important;
 }
 
-/* FUN PAGE (SCRATCH.HTML) SPECIFIC STYLES */
+/* --- FUN PAGE SPECIFIC STYLES (SCRATCH.HTML) --- */
 
-/* Style Definition 1: Navigation */
 .custom-nav {
     background-color: #263238;
     padding: 15px;
@@ -31,7 +37,6 @@ body {
     color: #80cbc4;
 }
 
-/* Style Definition 2: Hero Banner */
 .hero-banner {
     background-color: #00796b;
     color: #ffffff;
@@ -40,26 +45,18 @@ body {
     margin-bottom: 30px;
 }
 
-/* Style Definition 3: Container Div */
 .main-container {
     max-width: 900px;
     margin: 0 auto;
     padding: 0 20px;
 }
 
-/* Style Definition 4: Content Block Div */
 .content-block {
     background-color: #ffffff;
     padding: 30px;
     margin-bottom: 25px;
     border-radius: 8px;
     box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-}
-
-/* Volleyball Simulator Button Styling */
-.game-cta {
-    text-align: center;
-    border: 2px solid #00796b;
 }
 
 .play-button {
@@ -70,32 +67,10 @@ body {
     font-weight: bold;
     border-radius: 50px;
     display: inline-block;
-    font-family: sans-serif;
-    margin: 20px 0;
     transition: background-color 0.3s;
 }
 
-.play-button:hover {
-    background-color: #005f73;
-}
-
-/* Image & Video Layout */
-.fun-image {
-    max-width: 100%;
-    height: auto;
-    border-radius: 4px;
-    margin: 15px 0;
-}
-
-.video-frame {
-    display: flex;
-    justify-content: center;
-    padding: 15px 0;
-}
-
-/* Custom Footer for Fun Page */
-footer {
-    text-align: center;
-    padding: 30px;
-    background-color: #cfd8dc;
-}
+.play-button:hover { background-color: #005f73; }
+.fun-image { max-width: 100%; height: auto; border-radius: 4px; margin: 15px 0; }
+.video-frame { display: flex; justify-content: center; padding: 15px 0; }
+footer { text-align: center; padding: 30px; background-color: #cfd8dc; }
