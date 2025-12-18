@@ -1,41 +1,86 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Document</title>
+    <title>Taylan's Fun Page</title>
+    <link rel="stylesheet" href="css/mystyles.css">
 </head>
+<body id="top"> 
 
-<body>
-    under construction
-    <h1>YouTube</h1>
-    <iframe width="560" height="315" src="https://www.youtube.com/embed/k7iOc1i1yGQ?si=C5ryjYhSPeQIOZGy"
-        title="YouTube video player" frameborder="0"
-        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-        referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
-    <h1>Tableau</h1>
-    <div class='tableauPlaceholder' id='viz1765220212366' style='position: relative'><noscript><a href='#'><img
-                    alt='Dashboard 4 '
-                    src='https:&#47;&#47;public.tableau.com&#47;static&#47;images&#47;Me&#47;MessiahVolleyball&#47;Dashboard4&#47;1_rss.png'
-                    style='border: none' /></a></noscript><object class='tableauViz' style='display:none;'>
-            <param name='host_url' value='https%3A%2F%2Fpublic.tableau.com%2F' />
-            <param name='embed_code_version' value='3' />
-            <param name='site_root' value='' />
-            <param name='name' value='MessiahVolleyball&#47;Dashboard4' />
-            <param name='tabs' value='no' />
-            <param name='toolbar' value='no' />
-            <param name='static_image'
-                value='https:&#47;&#47;public.tableau.com&#47;static&#47;images&#47;Me&#47;MessiahVolleyball&#47;Dashboard4&#47;1.png' />
-            <param name='animate_transition' value='yes' />
-            <param name='display_static_image' value='yes' />
-            <param name='display_spinner' value='yes' />
-            <param name='display_overlay' value='yes' />
-            <param name='display_count' value='yes' />
-            <param name='language' value='en-US' />
-        </object></div>
-    <script
-        type='text/javascript'>                    var divElement = document.getElementById('viz1765220212366'); var vizElement = divElement.getElementsByTagName('object')[0]; vizElement.style.width = '100%'; vizElement.style.maxWidth = '1150px'; vizElement.style.height = (divElement.offsetWidth * 0.75) + 'px'; vizElement.style.maxHeight = '860px'; var scriptElement = document.createElement('script'); scriptElement.src = 'https://public.tableau.com/javascripts/api/viz_v1.js'; vizElement.parentNode.insertBefore(scriptElement, vizElement);                </script>
+    <nav class="custom-nav">
+        <a href="index.html">Home</a>
+        <a href="about.html">Resume</a>
+    </nav>
+
+    <header class="hero-banner">
+        <h1>Welcome to Taylan's Court</h1>
+        <p>A deep dive into my passion for volleyball.</p>
+    </header>
+
+    <div class="main-container">
+        <div class="content-block">
+            <h2>Why I Love the Game</h2>
+            <p>Volleyball is a unique sport that allows me to have fun and connect with my friends while still being active!</p>
+            
+            <h3>My Game Checklist</h3>
+            <ol>
+                <li>Pre-game Warmup
+                    <ul>
+                        <li>Dynamic stretching</li>
+                        <li>Blocking drills</li>
+                        <li>Pepper with a teammate</li>
+                    </ul>
+                </li>
+                <li>Hydration</li>
+                <li>Have Fun!</li>
+            </ol>
+        </div>
+
+        <div class="content-block game-cta">
+            <h2>Interactive Play</h2>
+            <p>I built a custom JavaScript engine to simulate the timing of a spike. Test your reaction speed below!</p>
+            <div class="button-container">
+                <a href="volleyball-game.html" target="_blank" class="play-button">Volleyball Simulator</a>
+            </div>
+        </div>
+
+        <div class="content-block">
+            <h2>See the Action</h2>
+            <img src="https://images.unsplash.com/photo-1592656094267-764a45160876?q=80&w=2070&auto=format&fit=crop" alt="Volleyball court" class="fun-image">
+            
+            <h3>BYU Highlight Reels</h3>
+            <div class="video-frame">
+                <iframe width="560" height="315" src="https://www.youtube.com/embed/k7iOc1i1yGQ" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>
+            </div>
+        </div>
+
+        <div id="tableau-section" class="content-block">
+            <h2>Interactive Analytics</h2>
+            <div class="tableau-wrapper">
+                <div class='tableauPlaceholder' id='viz1765220212366' style='position: relative'>
+                    <noscript><a href='#'><img alt='Dashboard' src='https:&#47;&#47;public.tableau.com&#47;static&#47;images&#47;Me&#47;MessiahVolleyball&#47;Dashboard4&#47;1_rss.png' style='border: none' /></a></noscript>
+                    <object class='tableauViz' style='display:none;'>
+                        <param name='host_url' value='https%3A%2F%2Fpublic.tableau.com%2F' />
+                        <param name='name' value='MessiahVolleyball&#47;Dashboard4' />
+                        <param name='toolbar' value='yes' />
+                    </object>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <footer>
+        <a href="#top">Back to top of Fun Page</a>
+    </footer>
+
+    <script type='text/javascript'>
+        var divElement = document.getElementById('viz1765220212366'); 
+        var vizElement = divElement.getElementsByTagName('object')[0]; 
+        vizElement.style.width='100%'; vizElement.style.height=(divElement.offsetWidth*0.75)+'px';
+        var scriptElement = document.createElement('script'); 
+        scriptElement.src = 'https://public.tableau.com/javascripts/api/viz_v1.js'; 
+        vizElement.parentNode.insertBefore(scriptElement, vizElement);
+    </script>
 </body>
-
 </html>
