@@ -1,8 +1,71 @@
+/* Requirement: Custom background color */
 body {
-    font-family:'papyrus', 'Arial Narrow', Arial, sans-serif;
-    background-color: rgb(135, 201, 236)
+    background-color: #e0f2f1; /* Light teal background */
+    margin: 0;
+    padding: 0;
+    /* Requirement: Style specifying font family */
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    /* Requirement: Style specifying font color */
+    color: #263238;
 }
-h1{
-    font-family:'papyrus', fantasy;
+
+/* Style Definition 1: Hero Banner Styling */
+.hero-banner {
+    background-color: #00796b; /* Dark teal */
+    color: #ffffff;
+    text-align: center;
+    padding: 60px 20px;
 }
-.CSfont{font-family: 'pressura' !important;}
+
+/* Style Definition 2: Navigation Styling */
+.custom-nav {
+    background-color: #263238;
+    padding: 15px;
+    text-align: center;
+}
+
+.custom-nav a {
+    color: #ffffff;
+    margin: 0 15px;
+    text-decoration: none;
+    font-weight: bold;
+}
+
+.custom-nav a:hover {
+    color: #80cbc4;
+}
+
+/* Style Definition 3: Content Block Positioning */
+.main-container {
+    max-width: 900px;
+    margin: 20px auto;
+    padding: 0 20px;
+}
+
+.content-block {
+    background-color: #ffffff;
+    padding: 30px;
+    margin-bottom: 25px;
+    border-radius: 8px;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+}
+
+/* Style Definition 4: Image and Video Sizing */
+.fun-image {
+    max-width: 100%;
+    height: auto;
+    border-radius: 4px;
+    margin: 15px 0;
+}
+
+.video-frame {
+    display: flex;
+    justify-content: center;
+    padding: 15px 0;
+}
+
+footer {
+    text-align: center;
+    padding: 30px;
+    background-color: #cfd8dc;
+}
